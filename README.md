@@ -1,95 +1,117 @@
-# Conducting Qualitative Thematic Analysis with Large Language Models and RAG Implementation
+# Thematic Analysis with Large Language Models
 
 ## Overview
-This repository contains the code and methodology for conducting Reflexive Thematic Analysis (RTA) using Large Language Models (LLMs) with and without Retrieval-Augmented Generation (RAG). The research explores how LLMs, specifically **GPT-4o** and **Gemini 1.5 Pro**, can perform inductive thematic analysis on focus group transcripts.
+This Python package enables qualitative researchers to perform Reflexive Thematic Analysis (RTA), as outlined by Braun and Clarke, using Large Language Models (LLMs). It automates the process of generating codes and themes from textual data using various prompting techniques, including zero-shot, few-shot, and chain-of-thought (CoT) approaches, with optional Retrieval-Augmented Generation (RAG) for enhanced contextualization.
 
-The project evaluates **zero-shot**, **few-shot**, and **chain-of-thought (CoT)** prompting techniques to determine the most effective approach for qualitative analysis. Additionally, it examines whether **RAG** improves the quality of LLM-generated themes.
+This tool is based on research conducted in the master's thesis "Conducting Qualitative Thematic Analysis with Large Language Models and RAG Implementation" by Natalie A. Barnett (Lucerne University of Applied Sciences and Arts, 2024). The research systematically evaluates LLMs’ ability to perform thematic analysis and informs best practices for integrating AI into qualitative research workflows.
 
-## Research Questions
-1. How should LLM prompts be formulated to achieve the best results for thematic analysis?
-2. How does Retrieval-Augmented Generation (RAG) influence LLM-generated thematic outputs?
-3. How do different LLMs (GPT-4o vs. Gemini 1.5 Pro) compare in thematic analysis performance?
+## Features
+* **Automated Thematic Analysis**: Generates codes and themes from qualitative data using LLMs.
+* **Multiple Prompting Techniques**: Supports zero-shot, few-shot, and chain-of-thought prompting.
+* **Retrieval-Augmented Generation** (RAG): Optional integration of external knowledge to enhance theme generation.
+* **Structured JSON Outputs**: Outputs codes and themes in an organized format suitable for further analysis.
+* **Configurable LLM Models**: Works with all versions of API accessible GPT and Gemini.
 
-## Dataset
-The focus group data consists of transcripts from **medical doctors** discussing their experiences wearing glucose monitoring sensors. The dataset includes **38,000 words**, originally in German and translated into English using DeepL Pro.
-
-## Methodology
-The project follows a **three-phase methodology**:
-1. **Prompt Engineering** – Developing effective thematic analysis prompts (zero-shot, few-shot, and CoT).
-2. **RAG Implementation** – Fine-tuning RAG architecture for enhanced qualitative analysis.
-3. **Model Comparison** – Comparing outputs between **GPT-4o** and **Gemini 1.5 Pro**.
-
-### Technologies Used
-- **Python** (Executed in Google Colab Pro)
+## Technologies Used
+- **Python**
 - **LangChain** for LLM workflow integration
 - **OpenAI & Google API** for LLM access
 - **Chroma** as a vector database
 - **Tesseract OCR & Poppler-utils** for document parsing
 - **Pandas, NumPy** for data processing
 
-## Key Findings
-- **CoT prompting** produces the most analytically coherent themes.
-- **RAG** does not consistently improve results and may introduce noise.
-- **GPT-4o and Gemini 1.5 Pro** exhibit strong thematic alignment, with minor variations in interpretation.
-- **Embedding Models**: OpenAI's `text-embedding-3-large` and Google's `text-embedding-004` were tested for optimal vector representation.
-
 ## Installation
-### System Dependencies
-Before running the code, install the required system dependencies:
+### Step 1: Install System Dependencies (Required for document parsing)
 ```sh
 sudo apt update && sudo apt install -y poppler-utils tesseract-ocr libtesseract-dev libleptonica-dev
 ```
+### Step 2: Install the Package
+You can install the package either from PyPI or directly from GitHub.
 
-### Python Dependencies
-Install the necessary Python packages:
-```sh
-pip install -r requirements.txt
-```
-
-## Usage
-1. Install package from PyPi:
+**Option 1: Install from PyPI (Recommended)**
 ```
 pip install TA_using_LLMs
 ```
-OR
-
-Clone the repository:
+**Option 2: Install from GitHub (For Development & Latest Updates)**
    ```sh
-   git clone https://github.com/nbarnett19/Thematic_Analysis_using_LLMs.git
-   cd Thematic_Analysis_using_LLMs
+git clone https://github.com/nbarnett19/Thematic_Analysis_using_LLMs.git
+cd Thematic_Analysis_using_LLMs
+pip install -r requirements.txt
+
    ```
-2. Install dependencies (see above).
-3. Link to Colab Demo: https://colab.research.google.com/drive/19MrRwsY0dn3rtzGQUKtI1Ubyb0Swz0Rw?usp=sharing 
 
-Repository Structure
+## Quick Start
 ```
-├── RAG_files/                   # Data files used for retrieval-augmented generation
-├── ScannedPDFs_for_RAG/         # Additional scanned documents for retrieval
-├── TA_using_LLMs/               # Core thematic analysis module
-├── data/                        # Uploaded data files for analysis
-├── dist/                        # Distribution package files
-├── .github/                     # GitHub workflow and configuration files
-├── .gitignore                   # Ignore rules for Git
-├── LICENSE                      # Project license
-├── README.md                    # This README file
-├── TA_using_LLMs_DEMO.ipynb      # Jupyter Notebook for demonstration
-├── pyproject.toml                # Project metadata and build system requirements
-├── requirements.txt              # List of dependencies
-├── setup.py                      # Installation script
+# Define research questions (as a list of strings)
+rqs = ["How does self-tracking influence understanding of glucose metabolism?"]
+
+# Establish connection to LLM via API
+from TA_using_LLMs.logic import ModelManager
+model_manager = ModelManager(model_choice='gemini-1.5-pro', temperature=0.5, top_p=0.5)
+
+# Load text data from folder
+from TA_using_LLMs.logic import FolderLoader
+loader = FolderLoader(folder_path)
+docs = loader.load_txt()
+
+# Split documents into chunks (for improved analysis)
+chunks = loader.split_text(docs, chunk_size=1000, chunk_overlap=500)
+
+# Initialize Thematic Analysis with the loaded data
+from TA_using_LLMs.logic import ThematicAnalysis
+prompt = ThematicAnalysis(llm=model_manager.llm, docs=docs, chunks=chunks, rqs=rqs)
+
+# Perform analysis using zero-shot control prompting
+simple_TA_analysis = prompt.zs_control_gemini(filename="simple_TA_analysis.json")
+
+# Convert results to a Pandas dataframe for easy inspection
+import pandas as pd
+df = pd.json_normalize(simple_TA_analysis)
+print(df.head())  # Display the first few rows
+```
+For an in-depth demo of the package, please refer to this [Colab](https://colab.research.google.com/drive/19MrRwsY0dn3rtzGQUKtI1Ubyb0Swz0Rw?usp=sharing)
+
+## Background & Research
+This package implements methodologies developed in my master's thesis, which investigates LLM capabilities in qualitative research. The study compares different prompt engineering strategies and evaluates their effectiveness using expert feedback and statistical analyses. Results indicate that:
+- **CoT prompting** produces the most analytically coherent themes.
+- **RAG** does not consistently improve results and may introduce noise.
+- **GPT-4o and Gemini 1.5 Pro** exhibit strong thematic alignment, with minor variations in interpretation.
+
+If you are interested in the theoretical foundation and methodology, you can read the full thesis here: [LINK TO THESIS](https://drive.google.com/file/d/1fK1tvNWiJrrVz3b2TGcqcA_4VDaKf0bd/view?usp=sharing)
+
+### How It Works
+1. Data Preprocessing: Text is chunked for better LLM processing.
+2. Code Generation: The LLM identifies meaningful segments and assigns codes.
+3. Theme Generation: The LLM groups codes into coherent themes.
+4. (Optional) RAG Integration: External documents provide additional context to enhance thematic analysis.
+
+### Example Output
+```
+{
+    "theme": "Influence of Self-Tracking on Understanding Glucose Metabolism",
+    "theme_definition": "This theme explores how self-tracking with a glucose sensor influences residents' understanding of glucose metabolism, highlighting the physiological insights gained and the impact of lifestyle factors on glucose levels.",
+    "subthemes": [
+        "Physiological Insights from Self-Tracking",
+        "Impact of Lifestyle Factors on Glucose Levels"
+    ],
+    "subtheme_definitions": [
+        "Residents gained insights into the physiological processes of glucose metabolism, such as the body's response to different foods and activities, through self-tracking.",
+        "Residents observed how lifestyle factors like stress, diet, and physical activity influence glucose levels, enhancing their understanding of glucose metabolism."
+    ],
+    "supporting_quotes": [
+        "I found it impressive to observe my blood sugar for the first time after eating a pizza over lunch. It shot up from under 6 to almost 9 mmol/l.",
+        "I noticed how little the feeling of low blood sugar correlates with hunger. The idea that 'I am hypoglycemic' is only true to a very limited extent.",
+        "I've noticed myself when I'm under stress, when I'm having a hard day, I feel shaky and then I eat something and then I feel better and somehow that's where the interest came from: 'Okay, what's actually going on with my blood sugar?'",
+        "And also to get a feeling for which foods have which influence, for example a very balanced meal with lots of protein actually caused a relatively stable curve and you felt very good, whereas a very carbohydrate-rich meal with almost exclusively carbohydrates caused big peaks."
+    ]
+}
 ```
 
-## Contributors
-- **Natalie A. Barnett** (Author)
-- **Lucerne University of Applied Sciences and Arts**
-- **Lecturers: Rabea Krings & Diego Antognini**
+## Citation
+If you use this package in your research, please cite:
+> Barnett, N. A. (2024). Conducting Qualitative Thematic Analysis with Large Language Models and RAG Implementation. Lucerne University of Applied Sciences and Arts. [LINK TO THESIS](https://drive.google.com/file/d/1fK1tvNWiJrrVz3b2TGcqcA_4VDaKf0bd/view?usp=sharing)
 
 ## License
 This project is licensed under the MIT License. See `LICENSE` for details.
-
-## Citation
-If you use this research, please cite:
-```
-Barnett, N.A. (2024). Conducting Qualitative Thematic Analysis with Large Language Models and RAG Implementation. MSc Thesis, Lucerne University of Applied Sciences and Arts.
-```
 
 ---
